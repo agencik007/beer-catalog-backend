@@ -142,4 +142,7 @@ dist
 # SvelteKit build / generate output
 .svelte-kit
 
+# .idea WebStorm config folder
+.idea
+
 # End of https://www.toptal.com/developers/gitignore/api/node
