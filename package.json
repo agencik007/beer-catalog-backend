@@ -1,0 +1,47 @@
+{
+  "name": "backend",
+  "version": "0.1.0",
+  "description": "Beer catalog with user authentication, admin role, comments and  adding/editing beers.  ",
+  "main": "index.js",
+  "scripts": {
+    "start": "ts-node index.ts",
+    "start:dev": "tsnd index.ts",
+    "build": "tsc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/agencik007/beer-catalog-backend.git"
+  },
+  "keywords": [
+    "beer",
+    "catalog",
+    "ratings",
+    "comments"
+  ],
+  "author": "Karol Jasnoch",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/agencik007/beer-catalog-backend/issues"
+  },
+  "homepage": "https://github.com/agencik007/beer-catalog-backend#readme",
+  "dependencies": {
+    "bcrypt": "^5.0.1",
+    "cors": "^2.8.5",
+    "express": "^4.18.1",
+    "express-async-errors": "^3.1.1",
+    "jsonwebtoken": "^8.5.1",
+    "mongoose": "^6.4.0",
+    "uuid": "^8.3.2"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^5.0.0",
+    "@types/cors": "^2.8.12",
+    "@types/express": "^4.17.13",
+    "@types/jsonwebtoken": "^8.5.8",
+    "@types/node": "^18.0.0",
+    "@types/uuid": "^8.3.4",
+    "ts-node": "^10.8.1",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^4.7.4"
+  }
+}
