@@ -1,7 +1,6 @@
 import express, {json, Router} from 'express';
 import cors from 'cors';
 import 'express-async-errors';
-
 import {connectDB} from "./config/db";
 import rateLimit from 'express-rate-limit';
 import {beerRouter} from "./routes/beerRouter";

@@ -1,13 +1,17 @@
 import {Request, Response} from "express";
 import {ValidationError} from "../utlis/errors";
 import asyncHandler from "express-async-handler";
+import {Beer} from "../models/beerModel";
+import {BeerEntity} from "../types/beer";
 
 
 // @desc   Get beers
 // @route  GET /api/beers
 // @access Private
 export const getBeers = asyncHandler(async (req: Request, res: Response) => {
-    res.status(200).json({message: 'Get beers'});
+    const beers = await Beer.find();
+
+    res.status(200).json(beers);
 })
 
 // @desc   Create beers
@@ -20,7 +24,19 @@ export const createBeer = asyncHandler(async (req: Request, res: Response) => {
             throw new ValidationError('Please add the name of the beer.')
 
     }
-    res.status(200).json({message: 'Create beer'});
+
+    const beer =  await Beer.create({
+        name: req.body.name,
+        type: req.body.type,
+        rating: req.body.rating,
+        alcohol: req.body.alcohol,
+        description: req.body.description,
+        avatar: req.body.avatar
+    } as BeerEntity);
+
+    await beer.save();
+
+    res.status(200).json(beer);
 })
 
 // @desc   Update beer
