@@ -1,7 +1,7 @@
 {
   "name": "backend",
   "version": "0.1.0",
-  "description": "Beer catalog with user authentication, admin role, comments and  adding/editing beers.  ",
+  "description": "Beer catalog with user authentication, admin role, comments and  adding/editing beers.",
   "main": "index.js",
   "scripts": {
     "start": "ts-node index.ts",
