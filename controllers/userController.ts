@@ -1,11 +1,10 @@
-import mongoose from "mongoose";
-import asyncHandler from "express-async-handler";
-import bcrypt from 'bcryptjs';
-import jsonwebtoken from 'jsonwebtoken';
 import {Request, Response} from "express";
-import {ValidationError} from "../middleware/errorMiddleware";
-import {UserEntity} from "../types";
+import bcrypt from 'bcryptjs';
+import {ValidationError} from "../utlis/errors";
+import asyncHandler from "express-async-handler";
 import {User} from "../models/userModel";
+import {UserEntity} from "../types/user";
+
 
 // @desc   Register new user
 // @route  POST /api/users
@@ -14,16 +13,18 @@ export const registerUser = asyncHandler(async (req: Request, res: Response) => 
     const {name, email, password} = req.body;
 
     if (!name || !email || !password) {
-        res.status(400);
-        throw new ValidationError('Please fill all fields.');
+        res.status(400)
+        throw new ValidationError('Please fill all fields.')
     }
 
     //Check if user exist
     const userExists = await User.findOne({email});
 
+    console.log(userExists)
+
     if (userExists) {
-        res.status(400);
-        throw new ValidationError('User already exists.');
+        res.status(400)
+        throw new ValidationError('User already exists.')
     }
 
     // Hash password
@@ -42,12 +43,11 @@ export const registerUser = asyncHandler(async (req: Request, res: Response) => 
         res.status(201).json({
             _id: user.id,
             name: user.name,
-            email: user.email,
-            token: generateToken(user._id, user.role)
+            email: user.email
         })
     } else {
-        res.status(400);
-        throw new ValidationError('Invalid user data.');
+        res.status(400)
+        throw new ValidationError('Invalid user data.')
     }
 })
 
@@ -55,40 +55,12 @@ export const registerUser = asyncHandler(async (req: Request, res: Response) => 
 // @route  POST /api/users/login
 // @access Public
 export const loginUser = asyncHandler(async (req: Request, res: Response) => {
-    const {email, password} = req.body;
-
-    // Check for user email
-    const user = await User.findOne({email});
-
-    if (user && (await bcrypt.compare(password, user.password))) {
-        res.json({
-            _id: user.id,
-            name: user.name,
-            email: user.email,
-            role: user.role,
-            token: generateToken(user._id, user.role)
-        })
-    } else {
-        res.status(400);
-        throw new ValidationError('Invalid credentials.');
-    }
+    res.json({message: 'Login User.'});
 })
 
 // @desc   Get user data
 // @route  GET /api/users/me
-// @access Private
+// @access Public
 export const getMe = asyncHandler(async (req: Request, res: Response) => {
-    // const userBeers = await Beer.find({user: req.user.id})
-
-    res.status(200).json({
-        user: req.user,
-        // userBeers,
-    })
+    res.json({message: 'User data display.'});
 })
-
-// Generate JWT
-const generateToken = (id: mongoose.Schema.Types.ObjectId, role: 'admin' | 'user') => {
-    return jsonwebtoken.sign({id, role}, process.env.JWT_SECRET, {
-        expiresIn: '3d'
-    })
-}
