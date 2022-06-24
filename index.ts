@@ -6,6 +6,7 @@ import rateLimit from 'express-rate-limit';
 import {beerRouter} from "./routes/beerRouter";
 import {handleError} from "./utlis/errors";
 import 'dotenv/config';
+import {userRouter} from "./routes/userRouter";
 
 (async () => {
     await connectDB();
@@ -29,6 +30,7 @@ app.use(rateLimit({
 const router = Router();
 
 router.use('/beers', beerRouter);
+router.use('/users', userRouter);
 
 app.use('/api', router);
 
