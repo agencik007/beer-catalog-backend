@@ -1,5 +1,5 @@
 import {Schema, model} from 'mongoose';
-import { UserEntity } from '../types';
+import { UserEntity } from '../types/user';
 
 // Create a Schema corresponding to the document interface
 const userModel = new Schema<UserEntity>({
