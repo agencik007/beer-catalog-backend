@@ -9,7 +9,9 @@ import {BeerEntity} from "../types/beer";
 // @route  GET /api/beers
 // @access Private
 export const getBeers = asyncHandler(async (req: Request, res: Response) => {
-    const beers = await Beer.find();
+    const beers = await Beer.find({});
+
+    console.log(beers);
 
     res.status(200).json(beers);
 })
@@ -43,12 +45,32 @@ export const createBeer = asyncHandler(async (req: Request, res: Response) => {
 // @route  PUT /api/beers/:id
 // @access Private
 export const updateBeer = asyncHandler(async (req: Request, res: Response) => {
-    res.status(200).json({message: `Update beer ${req.params.id}`});
+    const beer = await Beer.findById(req.params.id);
+
+    if (!beer) {
+        res.status(400);
+        throw new ValidationError('Beer not found.');
+    }
+
+    const updatedBeer = await Beer.findByIdAndUpdate(req.params.id, req.body, {
+        new: true,
+    })
+
+    res.status(200).json(updatedBeer);
 })
 
 // @desc   Delete beer
 // @route  DELETE /api/beers/:id
 // @access Private
 export const deleteBeer = asyncHandler(async (req: Request, res: Response) => {
-    res.status(200).json({message: `Delete beer ${req.params.id}`});
+    const beer = await Beer.findById(req.params.id);
+
+    if (!beer) {
+        res.status(400);
+        throw new ValidationError('Beer not found.');
+    }
+
+    await beer.remove();
+
+    res.status(200).json({id: req.params.id});
 })
