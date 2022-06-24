@@ -1,8 +1,9 @@
 import {Schema, model} from 'mongoose';
-import {BeerEntity} from "../types/beer/beer.entity";
+import {BeerEntity} from "../types/beer";
 
 // Create a Schema corresponding to the document interface
 const beerModel = new Schema<BeerEntity>({
+    user: { type: Schema.Types.ObjectId, required: true, ref: 'User' },
     name: { type: String, required: true, maxLength: 100},
     type: { type: String, required: true, maxLength: 50 },
     rating: { type: Number, required: true, maxLength: 2 },
