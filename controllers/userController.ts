@@ -1,9 +1,11 @@
 import {Request, Response} from "express";
 import bcrypt from 'bcryptjs';
-import {ValidationError} from "../utlis/errors";
+import {ValidationError} from "../middleware/errors";
 import asyncHandler from "express-async-handler";
 import {User} from "../models/userModel";
-import {UserEntity} from "../types/user";
+import {UserEntity} from "../types";
+import jsonwebtoken from 'jsonwebtoken';
+import mongoose from "mongoose";
 
 
 // @desc   Register new user
@@ -13,18 +15,18 @@ export const registerUser = asyncHandler(async (req: Request, res: Response) => 
     const {name, email, password} = req.body;
 
     if (!name || !email || !password) {
-        res.status(400)
-        throw new ValidationError('Please fill all fields.')
+        res.status(400);
+        throw new ValidationError('Please fill all fields.');
     }
 
     //Check if user exist
     const userExists = await User.findOne({email});
 
-    console.log(userExists)
+    console.log(userExists);
 
     if (userExists) {
-        res.status(400)
-        throw new ValidationError('User already exists.')
+        res.status(400);
+        throw new ValidationError('User already exists.');
     }
 
     // Hash password
@@ -43,11 +45,12 @@ export const registerUser = asyncHandler(async (req: Request, res: Response) => 
         res.status(201).json({
             _id: user.id,
             name: user.name,
-            email: user.email
+            email: user.email,
+            token: generateToken(user._id)
         })
     } else {
-        res.status(400)
-        throw new ValidationError('Invalid user data.')
+        res.status(400);
+        throw new ValidationError('Invalid user data.');
     }
 })
 
@@ -55,12 +58,42 @@ export const registerUser = asyncHandler(async (req: Request, res: Response) => 
 // @route  POST /api/users/login
 // @access Public
 export const loginUser = asyncHandler(async (req: Request, res: Response) => {
-    res.json({message: 'Login User.'});
+    const {email, password} = req.body;
+
+    // Check for user email
+    const user = await User.findOne({email});
+
+    if (user && (await bcrypt.compare(password, user.password))) {
+        res.json({
+            _id: user.id,
+            name: user.name,
+            email: user.email,
+            token: generateToken(user._id)
+        })
+    } else {
+        res.status(400);
+        throw new ValidationError('Invalid credentials.');
+    }
 })
 
 // @desc   Get user data
 // @route  GET /api/users/me
-// @access Public
+// @access Private
 export const getMe = asyncHandler(async (req: Request, res: Response) => {
+    const {_id, name, email} = await User.findById(req.user.id);
+
+    res.status(200).json({
+        id: _id,
+        name,
+        email,
+    })
+
     res.json({message: 'User data display.'});
 })
+
+// Generate JWT
+const generateToken = (id: mongoose.Schema.Types.ObjectId) => {
+    return jsonwebtoken.sign({ id }, process.env.JWT_SECRET, {
+        expiresIn: '1d'
+    })
+}

@@ -1,5 +1,5 @@
 import {Schema, model} from 'mongoose';
-import {BeerEntity} from "../types/beer";
+import {BeerEntity} from "../types";
 
 // Create a Schema corresponding to the document interface
 const beerModel = new Schema<BeerEntity>({

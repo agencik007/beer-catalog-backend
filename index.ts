@@ -4,7 +4,7 @@ import 'express-async-errors';
 import {connectDB} from "./config/db";
 import rateLimit from 'express-rate-limit';
 import {beerRouter} from "./routes/beerRouter";
-import {handleError} from "./utlis/errors";
+import {handleError} from "./middleware/errors";
 import 'dotenv/config';
 import {userRouter} from "./routes/userRouter";
 

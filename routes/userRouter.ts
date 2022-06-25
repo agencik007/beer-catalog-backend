@@ -1,5 +1,6 @@
 import {Router} from "express";
 import {getMe, loginUser, registerUser} from '../controllers/userController';
+import {protect} from "../middleware/auth";
 
 export const userRouter = Router()
 
@@ -7,4 +8,4 @@ export const userRouter = Router()
 
     .post('/login', loginUser)
 
-    .get('/me', getMe)
+    .get('/me', protect, getMe)
