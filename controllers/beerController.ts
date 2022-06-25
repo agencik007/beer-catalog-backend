@@ -1,8 +1,8 @@
 import {Request, Response} from "express";
-import {ValidationError} from "../utlis/errors";
+import {ValidationError} from "../middleware/errors";
 import asyncHandler from "express-async-handler";
 import {Beer} from "../models/beerModel";
-import {BeerEntity} from "../types/beer";
+import {BeerEntity} from "../types";
 
 
 // @desc   Get beers
