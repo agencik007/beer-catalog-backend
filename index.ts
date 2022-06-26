@@ -1,10 +1,10 @@
 import express, {json, Router} from 'express';
 import cors from 'cors';
 import 'express-async-errors';
-import {connectDB} from "./config/db";
+import {connectDB} from "./config/dbConnection";
 import rateLimit from 'express-rate-limit';
 import {beerRouter} from "./routes/beerRouter";
-import {handleError} from "./middleware/errors";
+import {handleError} from "./middleware/errorMiddleware";
 import 'dotenv/config';
 import {userRouter} from "./routes/userRouter";
 
