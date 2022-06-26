@@ -1,12 +1,13 @@
 import {Router} from 'express';
 import {createBeer, deleteBeer, getBeers, updateBeer} from "../controllers/beerController";
+import {protect} from "../middleware/authMiddleware";
 
 export const beerRouter = Router()
 
     .get('/', getBeers)
 
-    .post('/', createBeer)
+    .post('/', protect, createBeer)
 
-    .put('/:id', updateBeer)
+    .put('/:id', protect, updateBeer)
 
-    .delete('/:id', deleteBeer)
+    .delete('/:id', protect, deleteBeer)

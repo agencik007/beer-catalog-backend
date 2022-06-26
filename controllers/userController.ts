@@ -1,12 +1,11 @@
 import {Request, Response} from "express";
 import bcrypt from 'bcryptjs';
-import {ValidationError} from "../middleware/errors";
+import {ValidationError} from "../middleware/errorMiddleware";
 import asyncHandler from "express-async-handler";
 import {User} from "../models/userModel";
 import {UserEntity} from "../types";
 import jsonwebtoken from 'jsonwebtoken';
 import mongoose from "mongoose";
-
 
 // @desc   Register new user
 // @route  POST /api/users
@@ -46,7 +45,8 @@ export const registerUser = asyncHandler(async (req: Request, res: Response) => 
             _id: user.id,
             name: user.name,
             email: user.email,
-            token: generateToken(user._id)
+            role: user.role,
+            token: generateToken(user._id, user.role)
         })
     } else {
         res.status(400);
@@ -68,7 +68,8 @@ export const loginUser = asyncHandler(async (req: Request, res: Response) => {
             _id: user.id,
             name: user.name,
             email: user.email,
-            token: generateToken(user._id)
+            role: user.role,
+            token: generateToken(user._id, user.role)
         })
     } else {
         res.status(400);
@@ -92,8 +93,8 @@ export const getMe = asyncHandler(async (req: Request, res: Response) => {
 })
 
 // Generate JWT
-const generateToken = (id: mongoose.Schema.Types.ObjectId) => {
-    return jsonwebtoken.sign({ id }, process.env.JWT_SECRET, {
+const generateToken = (id: mongoose.Schema.Types.ObjectId, role: string) => {
+    return jsonwebtoken.sign({id, role}, process.env.JWT_SECRET, {
         expiresIn: '1d'
     })
 }
