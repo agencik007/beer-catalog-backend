@@ -1,5 +1,6 @@
-import mongoose from "mongoose";
+import {Schema} from "mongoose";
 
 export interface JwtPayload {
-    id: mongoose.Schema.Types.ObjectId;
+    id: Schema.Types.ObjectId;
+    role: string;
 }

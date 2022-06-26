@@ -1,9 +1,9 @@
 import {Request, Response} from "express";
-import {ValidationError} from "../middleware/errors";
+import {ValidationError} from "../middleware/errorMiddleware";
 import asyncHandler from "express-async-handler";
 import {Beer} from "../models/beerModel";
 import {BeerEntity} from "../types";
-
+import {decodeUserIdFromToken} from "../middleware/authMiddleware";
 
 // @desc   Get beers
 // @route  GET /api/beers
@@ -28,6 +28,7 @@ export const createBeer = asyncHandler(async (req: Request, res: Response) => {
     }
 
     const beer =  await Beer.create({
+        user: await decodeUserIdFromToken(req),
         name: req.body.name,
         type: req.body.type,
         rating: req.body.rating,
