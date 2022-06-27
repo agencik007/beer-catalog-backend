@@ -1,11 +1,12 @@
-import {Request, Response} from "express";
-import bcrypt from 'bcryptjs';
-import {ValidationError} from "../middleware/errorMiddleware";
-import asyncHandler from "express-async-handler";
-import {User} from "../models/userModel";
-import {UserEntity} from "../types";
-import jsonwebtoken from 'jsonwebtoken';
 import mongoose from "mongoose";
+import asyncHandler from "express-async-handler";
+import bcrypt from 'bcryptjs';
+import jsonwebtoken from 'jsonwebtoken';
+import {Request, Response} from "express";
+import {ValidationError} from "../middleware/errorMiddleware";
+import {UserEntity} from "../types";
+import {User} from "../models/userModel";
+import {Beer} from "../models/beerModel";
 
 // @desc   Register new user
 // @route  POST /api/users
@@ -83,13 +84,16 @@ export const loginUser = asyncHandler(async (req: Request, res: Response) => {
 export const getMe = asyncHandler(async (req: Request, res: Response) => {
     const {_id, name, email} = await User.findById(req.user.id);
 
+    const userBeers = await Beer.find({user: req.user.id})
+
     res.status(200).json({
         id: _id,
         name,
         email,
+        userBeers,
     })
 
-    res.json({message: 'User data display.'});
+    // res.json({message: 'User data display.'});
 })
 
 // Generate JWT
