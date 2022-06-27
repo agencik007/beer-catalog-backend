@@ -5,6 +5,7 @@ import {Beer} from "../models/beerModel";
 import {BeerEntity} from "../types";
 import {decodeUserIdFromToken} from "../middleware/authMiddleware";
 
+
 // @desc   Get beers
 // @route  GET /api/beers
 // @access Private
@@ -21,9 +22,8 @@ export const getBeers = asyncHandler(async (req: Request, res: Response) => {
 // @access Private
 export const createBeer = asyncHandler(async (req: Request, res: Response) => {
     if (!req.body.name) {
-        res
-            .status(400)
-            throw new ValidationError('Please add the name of the beer.')
+        res.status(400);
+        throw new ValidationError('Please add the name of the beer.');
 
     }
 
@@ -53,11 +53,18 @@ export const updateBeer = asyncHandler(async (req: Request, res: Response) => {
         throw new ValidationError('Beer not found.');
     }
 
-    const updatedBeer = await Beer.findByIdAndUpdate(req.params.id, req.body, {
-        new: true,
-    })
+    const decodeUserId = decodeUserIdFromToken(req);
 
-    res.status(200).json(updatedBeer);
+    if (beer.user.toString() !== decodeUserId.toString()) {
+        res.status(401);
+        throw new ValidationError('Only the beer creator can edit the beer entry.')
+    } else {
+        const updatedBeer = await Beer.findByIdAndUpdate(req.params.id, req.body, {
+            new: true,
+        })
+
+        res.status(200).json(updatedBeer);
+    }
 })
 
 // @desc   Delete beer
@@ -71,7 +78,13 @@ export const deleteBeer = asyncHandler(async (req: Request, res: Response) => {
         throw new ValidationError('Beer not found.');
     }
 
-    await beer.remove();
+    const decodeUserId = decodeUserIdFromToken(req);
 
-    res.status(200).json({id: req.params.id});
+    if (beer.user.toString() !== decodeUserId.toString()) {
+        res.status(401);
+        throw new ValidationError('Only the beer creator can delete the beer entry.')
+    } else {
+        await beer.remove();
+        res.status(200).json({id: req.params.id});
+    }
 })
