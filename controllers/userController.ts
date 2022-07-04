@@ -22,8 +22,6 @@ export const registerUser = asyncHandler(async (req: Request, res: Response) => 
     //Check if user exist
     const userExists = await User.findOne({email});
 
-    console.log(userExists);
-
     if (userExists) {
         res.status(400);
         throw new ValidationError('User already exists.');
@@ -46,7 +44,6 @@ export const registerUser = asyncHandler(async (req: Request, res: Response) => 
             _id: user.id,
             name: user.name,
             email: user.email,
-            role: user.role,
             token: generateToken(user._id, user.role)
         })
     } else {
@@ -82,22 +79,26 @@ export const loginUser = asyncHandler(async (req: Request, res: Response) => {
 // @route  GET /api/users/me
 // @access Private
 export const getMe = asyncHandler(async (req: Request, res: Response) => {
-    const {_id, name, email} = await User.findById(req.user.id);
-
+    // const {_id, name, email, role} = await User.findById(req.user.id);
+    //
+    //
+    // res.status(200).json({
+    //     id: _id,
+    //     name,
+    //     email,
+    //     role,
+    //     userBeers,
+    // })
     const userBeers = await Beer.find({user: req.user.id})
 
     res.status(200).json({
-        id: _id,
-        name,
-        email,
+        user: req.user,
         userBeers,
     })
-
-    // res.json({message: 'User data display.'});
 })
 
 // Generate JWT
-const generateToken = (id: mongoose.Schema.Types.ObjectId, role: string) => {
+const generateToken = (id: mongoose.Schema.Types.ObjectId, role: 'admin' | 'user') => {
     return jsonwebtoken.sign({id, role}, process.env.JWT_SECRET, {
         expiresIn: '1d'
     })
