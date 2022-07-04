@@ -3,7 +3,6 @@ import asyncHandler from "express-async-handler";
 import { User } from '../models/userModel';
 import {NextFunction, Request, Response} from "express";
 import {JwtPayload} from "../types";
-import {ObjectId} from "mongoose";
 
 
 
@@ -38,12 +37,12 @@ export const protect = asyncHandler(async (req: Request, res: Response, next: Ne
     }
 })
 
-export const decodeUserIdFromToken = (req: Request): ObjectId => {
-    const token = req.headers.authorization.split(' ')[1];
-
-    const decoded = jsonwebtoken.verify(token, process.env.JWT_SECRET) as JwtPayload;
-
-    const userId = decoded.id;
-
-    return userId;
-}
+// export const decodeUserIdFromToken = (req: Request): ObjectId => {
+//     const token = req.headers.authorization.split(' ')[1];
+//
+//     const decoded = jsonwebtoken.verify(token, process.env.JWT_SECRET) as JwtPayload;
+//
+//     const userId = decoded.id;
+//
+//     return userId;
+// }
