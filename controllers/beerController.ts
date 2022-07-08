@@ -11,8 +11,6 @@ import {BeerEntity} from "../types";
 export const getBeers = asyncHandler(async (req: Request, res: Response) => {
     const beers = await Beer.find({});
 
-    console.log(beers);
-
     res.status(200).json(beers);
 })
 
@@ -20,14 +18,12 @@ export const getBeers = asyncHandler(async (req: Request, res: Response) => {
 // @route  POST /api/beers
 // @access Private
 export const createBeer = asyncHandler(async (req: Request, res: Response) => {
-    if (!req.body.name) {
+    if (!req.body.name || !req.body.type || !req.body.rating || !req.body.alcohol || !req.body.description || !req.body.avatar) {
         res.status(400);
-        throw new ValidationError('Please add the name of the beer.');
-
+        throw new ValidationError('Please fill all fields in form.');
     }
 
     const beer =  await Beer.create({
-        // user: await decodeUserIdFromToken(req),
         user: req.user.id,
         name: req.body.name,
         type: req.body.type,
@@ -53,8 +49,6 @@ export const updateBeer = asyncHandler(async (req: Request, res: Response) => {
         throw new ValidationError('Beer not found.');
     }
 
-    // const decodeUserId = decodeUserIdFromToken(req);
-
     const decodeUserId = req.user.id;
 
     if (beer.user.toString() !== decodeUserId.toString()) {
@@ -79,8 +73,6 @@ export const deleteBeer = asyncHandler(async (req: Request, res: Response) => {
         res.status(400);
         throw new ValidationError('Beer not found.');
     }
-
-    // const decodeUserId = decodeUserIdFromToken(req);
 
     const decodeUserId = req.user.id;
 
