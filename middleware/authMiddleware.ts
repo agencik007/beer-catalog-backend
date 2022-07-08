@@ -4,8 +4,6 @@ import { User } from '../models/userModel';
 import {NextFunction, Request, Response} from "express";
 import {JwtPayload} from "../types";
 
-
-
 export const protect = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     let token;
 
@@ -36,13 +34,3 @@ export const protect = asyncHandler(async (req: Request, res: Response, next: Ne
         throw new Error('Not authorized, no token');
     }
 })
-
-// export const decodeUserIdFromToken = (req: Request): ObjectId => {
-//     const token = req.headers.authorization.split(' ')[1];
-//
-//     const decoded = jsonwebtoken.verify(token, process.env.JWT_SECRET) as JwtPayload;
-//
-//     const userId = decoded.id;
-//
-//     return userId;
-// }

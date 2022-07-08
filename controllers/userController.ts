@@ -6,7 +6,6 @@ import {Request, Response} from "express";
 import {ValidationError} from "../middleware/errorMiddleware";
 import {UserEntity} from "../types";
 import {User} from "../models/userModel";
-import {Beer} from "../models/beerModel";
 
 // @desc   Register new user
 // @route  POST /api/users
@@ -79,27 +78,17 @@ export const loginUser = asyncHandler(async (req: Request, res: Response) => {
 // @route  GET /api/users/me
 // @access Private
 export const getMe = asyncHandler(async (req: Request, res: Response) => {
-    // const {_id, name, email, role} = await User.findById(req.user.id);
-    //
-    //
-    // res.status(200).json({
-    //     id: _id,
-    //     name,
-    //     email,
-    //     role,
-    //     userBeers,
-    // })
-    const userBeers = await Beer.find({user: req.user.id})
+    // const userBeers = await Beer.find({user: req.user.id})
 
     res.status(200).json({
         user: req.user,
-        userBeers,
+        // userBeers,
     })
 })
 
 // Generate JWT
 const generateToken = (id: mongoose.Schema.Types.ObjectId, role: 'admin' | 'user') => {
     return jsonwebtoken.sign({id, role}, process.env.JWT_SECRET, {
-        expiresIn: '1d'
+        expiresIn: '3d'
     })
 }
