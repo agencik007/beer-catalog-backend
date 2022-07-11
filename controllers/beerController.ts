@@ -25,6 +25,7 @@ export const createBeer = asyncHandler(async (req: Request, res: Response) => {
 
     const beer =  await Beer.create({
         user: req.user.id,
+        createdBy: req.user.name,
         name: req.body.name,
         type: req.body.type,
         rating: req.body.rating,
