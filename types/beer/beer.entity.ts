@@ -1,6 +1,7 @@
 import { Schema } from "mongoose";
 
 export interface BeerEntity {
+    _id?: Schema.Types.ObjectId;
     user?: Schema.Types.ObjectId;
     createdBy: string;
     name: string;
