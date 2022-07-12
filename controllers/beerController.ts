@@ -18,7 +18,7 @@ export const getBeers = asyncHandler(async (req: Request, res: Response) => {
 // @route  POST /api/beers
 // @access Private
 export const createBeer = asyncHandler(async (req: Request, res: Response) => {
-    if (!req.body.name || !req.body.type || !req.body.rating || !req.body.alcohol || !req.body.description || !req.body.avatar) {
+    if (!req.body.name || !req.body.type || !req.body.rating || !req.body.alcohol || !req.body.description) {
         res.status(400);
         throw new ValidationError('Please fill all fields in form.');
     }
