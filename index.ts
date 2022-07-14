@@ -1,4 +1,3 @@
-const path = require('path');
 import express, {json, Router} from 'express';
 import cors from 'cors';
 import 'express-async-errors';
