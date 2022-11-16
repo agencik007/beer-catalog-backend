@@ -1,17 +1,85 @@
-import {Request, Response} from "express";
+import {NextFunction, Request, Response} from "express";
 import {ValidationError} from "../middleware/errorMiddleware";
 import asyncHandler from "express-async-handler";
 import {Beer} from "../models/beerModel";
 import {BeerEntity} from "../types";
+import { decodeToken } from "../middleware/authMiddleware";
 
 
 // @desc   Get beers
 // @route  GET /api/beers
 // @access Private
-export const getBeers = asyncHandler(async (req: Request, res: Response) => {
-    const beers = await Beer.find({});
+export const getBeers = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    const {page = 1, limit = 5} = req.query;
 
-    res.status(200).json(beers);
+    try {
+        const [results, itemCount] = await Promise.all([
+          Beer.find({})
+            .limit(Number(limit))
+            .skip((Number(page) - 1) * Number(limit))
+            .lean()
+            .exec(),
+          Beer.count({}),
+        ]);
+  
+        const pageCount = Math.ceil(itemCount / Number(limit));
+  
+        if (Number(req.query.page) > pageCount) {
+          res.status(404);
+          throw new ValidationError("No more pages and beers. Please back to previous page.");
+        }
+  
+        res.status(200).json({
+          currentPage: Number(page),
+          itemCount,
+          pageCount,
+          limitPerPage: Number(limit),
+          results,
+        });
+      } catch (err) {
+        next(err);
+      }
+})
+
+// @desc   User beers
+// @route  POST /api/userbeers
+// @access Private
+export const userBeers = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    const {page = 1, limit = 5} = req.query;
+
+    try {
+        if (!req.header('authorization')) {
+            throw new ValidationError('Not authorized, no token.')
+        }
+        const decodedToken = decodeToken(req.header('authorization').split(" ")[1]);
+        const userIdFromToken = decodedToken.id;
+
+        const [results, itemCount] = await Promise.all([
+            Beer.find({user: userIdFromToken})
+              .limit(Number(limit))
+              .skip((Number(page) - 1) * Number(limit))
+              .lean()
+              .exec(),
+            Beer.count({user: userIdFromToken}),
+          ]);
+    
+          const pageCount = Math.ceil(itemCount / Number(limit));
+    
+          if (Number(req.query.page) > pageCount) {
+            res.status(404);
+            throw new ValidationError("No more pages and beers. Please back to previous page.");
+          }
+    
+          res.status(200).json({
+            currentPage: Number(page),
+            itemCount,
+            pageCount,
+            limitPerPage: Number(limit),
+            results,
+          });
+    } catch (error) {
+        next(error);
+    }
 })
 
 // @desc   Create beers

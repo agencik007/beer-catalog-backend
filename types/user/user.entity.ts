@@ -7,4 +7,5 @@ export interface UserEntity {
     email: string;
     password: string;
     role?: 'user' | 'admin';
+    token?: string | null;
 }

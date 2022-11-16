@@ -7,6 +7,7 @@ const userModel = new Schema<UserEntity>({
     email: { type: String, required: true, maxLength: 100},
     password: { type: String, required: true, maxLength: 100 },
     role: { type: String, required: true },
+    token: { type: String }
 }, {
     timestamps: true
 });

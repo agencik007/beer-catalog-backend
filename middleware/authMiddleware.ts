@@ -3,6 +3,8 @@ import asyncHandler from "express-async-handler";
 import { User } from '../models/userModel';
 import {NextFunction, Request, Response} from "express";
 import {JwtPayload} from "../types";
+import mongoose from "mongoose";
+import { ValidationError } from "./errorMiddleware";
 
 export const protect = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     let token;
@@ -21,7 +23,12 @@ export const protect = asyncHandler(async (req: Request, res: Response, next: Ne
             // Get user from the token
             req.user = await User.findById(decoded.id).select('-password');
 
-            next();
+            if (req.user.token == token){
+                next();
+            } else {
+                res.status(401)
+                throw new Error('Unauthorized.');
+            }
         } catch (error) {
             console.log(error);
             res.status(401);
@@ -34,3 +41,21 @@ export const protect = asyncHandler(async (req: Request, res: Response, next: Ne
         throw new Error('Not authorized, no token');
     }
 })
+
+
+// Generate JWT
+export const generateToken = (id: mongoose.Schema.Types.ObjectId, role: 'admin' | 'user', name: string, email: string) => {
+    return jsonwebtoken.sign({id, role, name, email}, process.env.JWT_SECRET, {
+        expiresIn: '1d'
+    })
+}
+// Decode JWT token
+export const decodeToken = (token: string) => {
+    try {
+        const base64Payload = token.split(".")[1];
+        const payloadBuffer = Buffer.from(base64Payload, "base64");
+        return JSON.parse(payloadBuffer.toString());
+    } catch (error) {
+      throw new ValidationError(error);
+    }
+  };

@@ -1,11 +1,10 @@
-import mongoose from "mongoose";
 import asyncHandler from "express-async-handler";
 import bcrypt from 'bcryptjs';
-import jsonwebtoken from 'jsonwebtoken';
 import {Request, Response} from "express";
 import {ValidationError} from "../middleware/errorMiddleware";
 import {UserEntity} from "../types";
 import {User} from "../models/userModel";
+import { decodeToken, generateToken } from "../middleware/authMiddleware";
 
 // @desc   Register new user
 // @route  POST /api/users
@@ -43,7 +42,7 @@ export const registerUser = asyncHandler(async (req: Request, res: Response) => 
             _id: user.id,
             name: user.name,
             email: user.email,
-            token: generateToken(user._id, user.role)
+            token: generateToken(user._id, user.role, user.name, user.email)
         })
     } else {
         res.status(400);
@@ -61,17 +60,35 @@ export const loginUser = asyncHandler(async (req: Request, res: Response) => {
     const user = await User.findOne({email});
 
     if (user && (await bcrypt.compare(password, user.password))) {
+        const token = generateToken(user._id, user.role, user.name, user.email);
+        user.token = token;
+        await user.save();
+
         res.json({
             _id: user.id,
             name: user.name,
             email: user.email,
             role: user.role,
-            token: generateToken(user._id, user.role)
+            token,
         })
     } else {
         res.status(400);
-        throw new ValidationError('Invalid credentials.');
+        throw new ValidationError('Invalid email or password.');
     }
+})
+
+export const logoutUser = asyncHandler(async (req: Request, res: Response) => {
+    const decodedToken = decodeToken(req.header('authorization').split(" ")[1]);
+    const userIdFromToken = decodedToken.id;
+    
+    // Check for user id
+    const user = await User.findOne({_id:userIdFromToken});
+
+    user.token = '';
+    await user.save();
+    res.status(200).json({
+        message: 'User succesfully logged out.'
+    });
 })
 
 // @desc   Get user data
@@ -86,9 +103,3 @@ export const getMe = asyncHandler(async (req: Request, res: Response) => {
     })
 })
 
-// Generate JWT
-const generateToken = (id: mongoose.Schema.Types.ObjectId, role: 'admin' | 'user') => {
-    return jsonwebtoken.sign({id, role}, process.env.JWT_SECRET, {
-        expiresIn: '3d'
-    })
-}
