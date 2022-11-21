@@ -10,7 +10,7 @@ import { decodeToken } from "../middleware/authMiddleware";
 // @route  GET /api/beers
 // @access Private
 export const getBeers = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-    const {page = 1, limit = 5} = req.query;
+    const {page = 1, limit = 100} = req.query;
 
     try {
         const [results, itemCount] = await Promise.all([
@@ -45,7 +45,7 @@ export const getBeers = asyncHandler(async (req: Request, res: Response, next: N
 // @route  POST /api/userbeers
 // @access Private
 export const userBeers = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-    const {page = 1, limit = 5} = req.query;
+    const {page = 1, limit = 100} = req.query;
 
     try {
         if (!req.header('authorization')) {
