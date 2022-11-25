@@ -24,11 +24,6 @@ export const getBeers = asyncHandler(async (req: Request, res: Response, next: N
   
         const pageCount = Math.ceil(itemCount / Number(limit));
   
-        if (Number(req.query.page) > pageCount) {
-          res.status(404);
-          throw new ValidationError("No more pages and beers. Please back to previous page.");
-        }
-  
         res.status(200).json({
           currentPage: Number(page),
           itemCount,
@@ -64,11 +59,6 @@ export const userBeers = asyncHandler(async (req: Request, res: Response, next: 
           ]);
     
           const pageCount = Math.ceil(itemCount / Number(limit));
-    
-          if (Number(req.query.page) > pageCount) {
-            res.status(404);
-            throw new ValidationError("No more pages and beers. Please back to previous page.");
-          }
     
           res.status(200).json({
             currentPage: Number(page),
