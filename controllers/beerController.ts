@@ -5,7 +5,6 @@ import {Beer} from "../models/beerModel";
 import {BeerEntity} from "../types";
 import { decodeToken } from "../middleware/authMiddleware";
 
-
 // @desc   Get beers
 // @route  GET /api/beers
 // @access Private
