@@ -46,7 +46,7 @@ export const protect = asyncHandler(async (req: Request, res: Response, next: Ne
 // Generate JWT
 export const generateToken = (id: mongoose.Schema.Types.ObjectId, role: 'user' | 'admin', name: string, email: string) => {
     return jsonwebtoken.sign({id, role, name, email}, process.env.JWT_SECRET, {
-        expiresIn: '10sec'
+        expiresIn: '3d'
     })
 }
 // Decode JWT token

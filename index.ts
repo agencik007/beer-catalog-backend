@@ -13,18 +13,18 @@ connectDB();
 const app = express();
 
 app.use(cors({
-    // origin: 'http://localhost:3000'
-    origin: 'https://beercatalog.networkmanager.pl'
+    origin: 'http://localhost:3000'
+    // origin: 'https://beercatalog.networkmanager.pl'
 }));
 
 app.use(json());
 
 app.use(express.urlencoded({extended: false}));
 
-// app.use(rateLimit({
-//     windowMs: 5 * 60 * 1000, // 15 minutes
-//     max: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes)
-// }));
+app.use(rateLimit({
+    windowMs: 5 * 60 * 1000, // 15 minutes
+    max: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes)
+}));
 
 const router = Router();
 
