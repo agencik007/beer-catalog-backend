@@ -14,6 +14,7 @@ export const getBeers = asyncHandler(async (req: Request, res: Response, next: N
     try {
         const [results, itemCount] = await Promise.all([
           Beer.find({})
+            .sort({createdAt: -1})
             .limit(Number(limit))
             .skip((Number(page) - 1) * Number(limit))
             .lean()
@@ -51,6 +52,7 @@ export const userBeers = asyncHandler(async (req: Request, res: Response, next: 
         const [results, itemCount] = await Promise.all([
             Beer.find({user: userIdFromToken})
               .limit(Number(limit))
+              .sort({createdAt: -1})
               .skip((Number(page) - 1) * Number(limit))
               .lean()
               .exec(),
