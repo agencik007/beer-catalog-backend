@@ -37,12 +37,18 @@ export const registerUser = asyncHandler(async (req: Request, res: Response) => 
         role: email === process.env.ADMIN_EMAIL ? 'admin' : 'user',
     })
 
+    const setTokenOnUser = await User.findOne({email});
+
+    setTokenOnUser.token = generateToken(setTokenOnUser._id, setTokenOnUser.role, setTokenOnUser.name, setTokenOnUser.email);
+
+    await setTokenOnUser.save();
+    
     if (user) {
         res.status(201).json({
             _id: user.id,
             name: user.name,
             email: user.email,
-            token: generateToken(user._id, user.role, user.name, user.email)
+            token: setTokenOnUser.token
         })
     } else {
         res.status(400);
