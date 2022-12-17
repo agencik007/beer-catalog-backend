@@ -145,4 +145,7 @@ dist
 # .idea WebStorm config folder
 .idea
 
+# .vscode history
+.history
+
 # End of https://www.toptal.com/developers/gitignore/api/node

@@ -1,13 +1,17 @@
-import {Router} from "express";
-import {getMe, loginUser, logoutUser, registerUser} from '../controllers/userController';
-import {protect} from "../middleware/authMiddleware";
+import { Router } from 'express';
+import {
+	getMe,
+	loginUser,
+	logoutUser,
+	registerUser,
+} from '../controllers/userController';
+import { protect } from '../middleware/authMiddleware';
 
 export const userRouter = Router()
+	.post('/register', registerUser)
 
-    .post('/register', registerUser)
+	.post('/login', loginUser)
 
-    .post('/login', loginUser)
+	.post('/logout', protect, logoutUser)
 
-    .post('/logout', protect, logoutUser)
-
-    .get('/me', protect, getMe)
+	.get('/me', protect, getMe);
