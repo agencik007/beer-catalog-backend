@@ -21,6 +21,9 @@
 	],
 	"author": "Karol Jasnoch",
 	"license": "ISC",
+	"engines": {
+		"node": ">=22 <25"
+	},
 	"bugs": {
 		"url": "https://github.com/agencik007/beer-catalog-backend/issues"
 	},
