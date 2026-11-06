@@ -20,7 +20,7 @@ export const getBeers = asyncHandler(
 					.skip((Number(page) - 1) * Number(limit))
 					.lean()
 					.exec(),
-				Beer.count({}),
+				Beer.countDocuments({}),
 			]);
 
 			const pageCount = Math.ceil(itemCount / Number(limit));
@@ -46,12 +46,11 @@ export const userBeers = asyncHandler(
 		const { page = 1, limit = 100 } = req.query;
 
 		try {
-			if (!req.header('authorization')) {
+			const authHeader = req.header('authorization');
+			if (!authHeader) {
 				throw new ValidationError('Not authorized, no token.');
 			}
-			const decodedToken = decodeToken(
-				req.header('authorization').split(' ')[1]
-			);
+			const decodedToken = decodeToken(authHeader.split(' ')[1]);
 			const userIdFromToken = decodedToken.id;
 
 			const [results, itemCount] = await Promise.all([
@@ -61,7 +60,7 @@ export const userBeers = asyncHandler(
 					.skip((Number(page) - 1) * Number(limit))
 					.lean()
 					.exec(),
-				Beer.count({ user: userIdFromToken }),
+				Beer.countDocuments({ user: userIdFromToken }),
 			]);
 
 			const pageCount = Math.ceil(itemCount / Number(limit));
@@ -95,8 +94,8 @@ export const createBeer = asyncHandler(async (req: Request, res: Response) => {
 	}
 
 	const beer = await Beer.create({
-		user: req.user.id,
-		createdBy: req.user.name,
+		user: req.user!.id,
+		createdBy: req.user!.name,
 		name: req.body.name,
 		type: req.body.type,
 		rating: req.body.rating,
@@ -121,9 +120,9 @@ export const updateBeer = asyncHandler(async (req: Request, res: Response) => {
 		throw new ValidationError('Beer not found.');
 	}
 
-	const decodeUserId = req.user.id;
+	const decodeUserId = req.user!.id;
 
-	if (beer.user.toString() !== decodeUserId.toString()) {
+	if (beer.user!.toString() !== decodeUserId.toString()) {
 		res.status(401);
 		throw new ValidationError(
 			'Only the beer creator can edit the beer entry.'
@@ -152,15 +151,15 @@ export const deleteBeer = asyncHandler(async (req: Request, res: Response) => {
 		throw new ValidationError('Beer not found.');
 	}
 
-	const decodeUserId = req.user.id;
+	const decodeUserId = req.user!.id;
 
-	if (beer.user.toString() !== decodeUserId.toString()) {
+	if (beer.user!.toString() !== decodeUserId.toString()) {
 		res.status(401);
 		throw new ValidationError(
 			'Only the beer creator can delete the beer entry.'
 		);
 	} else {
-		await beer.remove();
+		await beer.deleteOne();
 		res.status(200).json({ id: req.params.id });
 	}
 });
