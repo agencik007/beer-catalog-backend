@@ -9,6 +9,7 @@ import { ValidationError } from './errorMiddleware';
 export const protect = asyncHandler(
 	async (req: Request, res: Response, next: NextFunction) => {
 		let token;
+		const JWT_SECRET = process.env.JWT_SECRET as string;
 
 		if (
 			req.headers.authorization &&
@@ -19,15 +20,17 @@ export const protect = asyncHandler(
 				token = req.headers.authorization.split(' ')[1];
 
 				// Verify token
-				const decoded = jsonwebtoken.verify(
-					token,
-					process.env.JWT_SECRET
-				) as JwtPayload;
+				const decoded = jsonwebtoken.verify(token, JWT_SECRET) as JwtPayload;
 
 				// Get user from the token
-				req.user = await User.findById(decoded.id).select('-password');
+				const foundUser = await User.findById(decoded.id).select('-password');
+				if (!foundUser) {
+					res.status(401);
+					throw new Error('Unauthorized.');
+				}
+				req.user = foundUser;
 
-				if (req.user.token == token) {
+				if (req.user && req.user.token == token) {
 					next();
 				} else {
 					res.status(401);
@@ -54,9 +57,10 @@ export const generateToken = (
 	name: string,
 	email: string
 ) => {
+	const JWT_SECRET = process.env.JWT_SECRET as string;
 	return jsonwebtoken.sign(
 		{ id, role, name, email },
-		process.env.JWT_SECRET,
+		JWT_SECRET,
 		{
 			expiresIn: '3d',
 		}
@@ -69,6 +73,8 @@ export const decodeToken = (token: string) => {
 		const payloadBuffer = Buffer.from(base64Payload, 'base64');
 		return JSON.parse(payloadBuffer.toString());
 	} catch (error) {
-		throw new ValidationError(error);
+		throw new ValidationError(
+			(error as Error)?.message || 'Invalid token provided.'
+		);
 	}
 };
