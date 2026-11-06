@@ -31,31 +31,28 @@ export const registerUser = asyncHandler(
 		const hashedPassword = await bcrypt.hash(password, salt);
 
 		// Create user and admin
-		const user: UserEntity = await User.create({
+		const user = await User.create({
 			name,
 			email,
 			password: hashedPassword,
 			role: email === process.env.ADMIN_EMAIL ? 'admin' : 'user',
 		});
 
-		// Set token on user in db
-		const setTokenOnUser = await User.findOne({ email });
-
-		setTokenOnUser.token = generateToken(
-			setTokenOnUser._id,
-			setTokenOnUser.role,
-			setTokenOnUser.name,
-			setTokenOnUser.email
+		// Set token on created user in db
+		user.token = generateToken(
+			user._id!,
+			(user.role as 'user' | 'admin') || 'user',
+			user.name!,
+			user.email
 		);
-
-		await setTokenOnUser.save();
+		await user.save();
 
 		if (user) {
 			res.status(201).json({
 				_id: user.id,
 				name: user.name,
 				email: user.email,
-				token: setTokenOnUser.token,
+				token: user.token,
 			});
 		} else {
 			res.status(400);
@@ -74,7 +71,12 @@ export const loginUser = asyncHandler(async (req: Request, res: Response) => {
 	const user = await User.findOne({ email });
 
 	if (user && (await bcrypt.compare(password, user.password))) {
-		const token = generateToken(user._id, user.role, user.name, user.email);
+		const token = generateToken(
+			user._id!,
+			(user.role as 'user' | 'admin') || 'user',
+			user.name!,
+			user.email
+		);
 		user.token = token;
 		await user.save();
 
@@ -92,12 +94,20 @@ export const loginUser = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const logoutUser = asyncHandler(async (req: Request, res: Response) => {
-	const decodedToken = decodeToken(req.header('authorization').split(' ')[1]);
+	const authHeader = req.header('authorization');
+	if (!authHeader) {
+		res.status(401);
+		throw new ValidationError('Not authorized, no token.');
+	}
+	const decodedToken = decodeToken(authHeader.split(' ')[1]);
 	const userIdFromToken = decodedToken.id;
 
 	// Check for user id
 	const user = await User.findOne({ _id: userIdFromToken });
-
+	if (!user) {
+		res.status(400);
+		throw new ValidationError('User not found.');
+	}
 	user.token = '';
 	await user.save();
 	res.status(200).json({
