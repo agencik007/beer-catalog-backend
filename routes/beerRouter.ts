@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
 	createBeer,
 	deleteBeer,
+	getBeer,
 	getBeers,
 	updateBeer,
 	userBeers,
@@ -12,6 +13,8 @@ export const beerRouter = Router()
 	.get('/', getBeers)
 
 	.get('/userbeers', protect, userBeers)
+
+	.get('/:id', getBeer)
 
 	.post('/', protect, createBeer)
 
