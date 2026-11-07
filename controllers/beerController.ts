@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 import { ValidationError } from '../middleware/errorMiddleware';
 import asyncHandler from 'express-async-handler';
+import { isValidObjectId } from 'mongoose';
 import { Beer } from '../models/beerModel';
 import { BeerEntity } from '../types';
 import { decodeToken } from '../middleware/authMiddleware';
@@ -37,6 +38,27 @@ export const getBeers = asyncHandler(
 		}
 	}
 );
+
+// @desc   Get one beer
+// @route  GET /api/beers/:id
+// @access Public
+export const getBeer = asyncHandler(async (req: Request, res: Response) => {
+	const { id } = req.params;
+
+	if (!isValidObjectId(id)) {
+		res.status(404);
+		throw new ValidationError('Beer not found.');
+	}
+
+	const beer = await Beer.findById(id).lean().exec();
+
+	if (!beer) {
+		res.status(404);
+		throw new ValidationError('Beer not found.');
+	}
+
+	res.status(200).json(beer);
+});
 
 // @desc   User beers
 // @route  POST /api/userbeers
