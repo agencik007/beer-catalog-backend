@@ -58,7 +58,7 @@ The OAuth callback creates the session as a cookie on the backend domain (in pro
 
 ### Scripts
 
-- `npm run migrate:users -- --dry-run`, then `npm run migrate:users`: copies accounts from the legacy `users` collection into Better Auth (same ids, same passwords, emails marked as verified). Idempotent; the legacy collection is kept as a backup.
+- `npm run migrate:users -- --dry-run`, then `npm run migrate:users`: copies accounts from the legacy `users` collection into Better Auth (same ids, same passwords). Emails are marked as **not verified**: on the first sign-in attempt the user gets a verification email, then the old password works. Review migrated admins manually. Idempotent; the legacy collection is kept as a backup.
 - `npm run set-admin -- <email> [--revoke]`: grants or revokes the admin role.
 
 ### Deployment (Render)

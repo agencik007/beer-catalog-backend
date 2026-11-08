@@ -72,6 +72,8 @@ export const auth = betterAuth({
 
 	emailVerification: {
 		sendOnSignUp: true,
+		// Unverified (e.g. migrated) users get a fresh verification link when they try to sign in
+		sendOnSignIn: true,
 		autoSignInAfterVerification: true,
 		sendVerificationEmail: async ({ user, url }) => {
 			void sendEmail({

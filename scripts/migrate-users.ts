@@ -4,7 +4,10 @@
  *
  * - keeps the same `_id`, so `beer.user` references stay valid
  * - keeps the bcrypt password hash, so users log in with their old password
- * - marks emails as verified, so existing users are not locked out
+ * - marks emails as NOT verified: the legacy system never verified ownership, so a
+ *   squatted address must not be trusted (prevents account pre-hijacking via OAuth
+ *   linking). On the next sign-in Better Auth emails a verification link
+ *   (`emailVerification.sendOnSignIn`), after which the old password keeps working.
  * - idempotent: already migrated users are skipped
  *
  * Usage: npm run migrate:users -- [--dry-run]
@@ -77,7 +80,7 @@ const main = async () => {
 				_id: u._id,
 				name: u.name || email.split('@')[0],
 				email,
-				emailVerified: true,
+				emailVerified: false,
 				image: null,
 				role,
 				banned: false,
@@ -104,6 +107,7 @@ const main = async () => {
 		console.log(`Done. ${dryRun ? 'Would migrate' : 'Migrated'}: ${migrated}, skipped: ${skipped}.`);
 		if (!dryRun && migrated) {
 			console.log('The legacy "users" collection was left untouched as a backup.');
+			console.log('Migrated admins keep their role but must verify their email before signing in; review them manually.');
 		}
 	} finally {
 		await client.close();
