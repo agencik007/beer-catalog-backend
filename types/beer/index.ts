@@ -1,1 +1,1 @@
-export * from './beer.entity';
+export * from './beer.entity.js';

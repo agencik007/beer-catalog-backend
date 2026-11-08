@@ -1,80 +1,46 @@
-import jsonwebtoken from 'jsonwebtoken';
-import asyncHandler from 'express-async-handler';
-import { User } from '../models/userModel';
 import { NextFunction, Request, Response } from 'express';
-import { JwtPayload } from '../types';
-import mongoose from 'mongoose';
-import { ValidationError } from './errorMiddleware';
+import { fromNodeHeaders } from 'better-auth/node';
+import { auth } from '../lib/auth.js';
 
-export const protect = asyncHandler(
-	async (req: Request, res: Response, next: NextFunction) => {
-		let token;
-		const JWT_SECRET = process.env.JWT_SECRET as string;
-
-		if (
-			req.headers.authorization &&
-			req.headers.authorization.startsWith('Bearer')
-		) {
-			try {
-				// Get token from header
-				token = req.headers.authorization.split(' ')[1];
-
-				// Verify token
-				const decoded = jsonwebtoken.verify(token, JWT_SECRET) as JwtPayload;
-
-				// Get user from the token
-				const foundUser = await User.findById(decoded.id).select('-password');
-				if (!foundUser) {
-					res.status(401);
-					throw new Error('Unauthorized.');
-				}
-				req.user = foundUser;
-
-				if (req.user && req.user.token == token) {
-					next();
-				} else {
-					res.status(401);
-					throw new Error('Unauthorized.');
-				}
-			} catch (error) {
-				console.log(error);
-				res.status(401);
-				throw new Error('Not authorized');
-			}
-		}
-
-		if (!token) {
-			res.status(401);
-			throw new Error('Not authorized, no token');
-		}
-	}
-);
-
-// Generate JWT
-export const generateToken = (
-	id: mongoose.Schema.Types.ObjectId,
-	role: 'user' | 'admin',
-	name: string,
-	email: string
-) => {
-	const JWT_SECRET = process.env.JWT_SECRET as string;
-	return jsonwebtoken.sign(
-		{ id, role, name, email },
-		JWT_SECRET,
-		{
-			expiresIn: '3d',
-		}
-	);
-};
-// Decode JWT token
-export const decodeToken = (token: string) => {
+// Requires a valid Better Auth session (Bearer token or session cookie)
+export const protect = async (req: Request, res: Response, next: NextFunction) => {
 	try {
-		const base64Payload = token.split('.')[1];
-		const payloadBuffer = Buffer.from(base64Payload, 'base64');
-		return JSON.parse(payloadBuffer.toString());
+		const result = await auth.api.getSession({
+			headers: fromNodeHeaders(req.headers),
+		});
+
+		if (!result) {
+			res.status(401).json({ message: 'Not authorized.' });
+			return;
+		}
+
+		if (result.user.banned) {
+			res.status(403).json({ message: 'Account is banned.' });
+			return;
+		}
+
+		req.user = result.user;
+		req.session = result.session;
+		next();
 	} catch (error) {
-		throw new ValidationError(
-			(error as Error)?.message || 'Invalid token provided.'
-		);
+		next(error);
 	}
 };
+
+// Use after `protect`
+export const requireRole =
+	(...roles: string[]) =>
+	(req: Request, res: Response, next: NextFunction) => {
+		const userRoles = (req.user?.role ?? '').split(',').map((r) => r.trim());
+		if (!roles.some((role) => userRoles.includes(role))) {
+			res.status(403).json({ message: 'Forbidden.' });
+			return;
+		}
+		next();
+	};
+
+export const isAdmin = (req: Request) =>
+	(req.user?.role ?? '')
+		.split(',')
+		.map((r) => r.trim())
+		.includes('admin');
