@@ -1,4 +1,5 @@
-import { Resend } from 'resend';
+// Transactional emails via the Brevo HTTP API (https://developers.brevo.com/reference/send-transac-email)
+const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
 
 interface SendEmailOptions {
 	to: string;
@@ -8,35 +9,45 @@ interface SendEmailOptions {
 	link?: string;
 }
 
-let resend: Resend | null = null;
-
-const getResend = () => {
-	if (!process.env.RESEND_API_KEY) return null;
-	resend ??= new Resend(process.env.RESEND_API_KEY);
-	return resend;
-};
-
 export const sendEmail = async ({ to, subject, html, link }: SendEmailOptions) => {
-	const client = getResend();
+	const apiKey = process.env.BREVO_API_KEY;
 
-	if (!client) {
+	if (!apiKey) {
 		if (process.env.NODE_ENV === 'production') {
-			throw new Error('RESEND_API_KEY is not set, cannot send emails.');
+			throw new Error('BREVO_API_KEY is not set, cannot send emails.');
 		}
 		console.log(`[email:dev] To: ${to} | ${subject}${link ? ` | ${link}` : ''}`);
 		return;
 	}
 
-	const { error } = await client.emails.send({
-		from: process.env.EMAIL_FROM || 'Beer Catalog <onboarding@resend.dev>',
-		to,
-		subject,
-		html,
+	const senderEmail = process.env.EMAIL_FROM_ADDRESS;
+	if (!senderEmail) {
+		throw new Error('EMAIL_FROM_ADDRESS is not set (must be a sender verified in Brevo).');
+	}
+
+	const response = await fetch(BREVO_API_URL, {
+		method: 'POST',
+		headers: {
+			accept: 'application/json',
+			'content-type': 'application/json',
+			'api-key': apiKey,
+		},
+		body: JSON.stringify({
+			sender: {
+				name: process.env.EMAIL_FROM_NAME || 'Beer Catalog',
+				email: senderEmail,
+			},
+			to: [{ email: to }],
+			subject,
+			htmlContent: html,
+			...(link ? { textContent: `${subject}\n\n${link}` } : {}),
+		}),
+		signal: AbortSignal.timeout(10_000),
 	});
 
-	if (error) {
-		console.error('[email] Failed to send email:', error);
-		throw new Error(`Failed to send email: ${error.message}`);
+	if (!response.ok) {
+		const body = await response.text().catch(() => '');
+		throw new Error(`Brevo responded with ${response.status}: ${body.slice(0, 300)}`);
 	}
 };
 

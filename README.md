@@ -56,6 +56,24 @@ OAuth callback URLs to register with the providers:
 `${BETTER_AUTH_URL}/api/auth/callback/google` and `${BETTER_AUTH_URL}/api/auth/callback/github`.
 The OAuth callback creates the session as a cookie on the backend domain (in production: `SameSite=None; Secure`). After the redirect back to the frontend, call `authClient.getSession({ fetchOptions: { credentials: 'include' } })` once and store `data.session.token` as the bearer token.
 
+### Email (Brevo)
+
+1. Brevo → **Senders, Domains & Dedicated IPs** → add and verify the sender address (or authenticate your domain for better deliverability).
+2. Brevo → **SMTP & API** → **API Keys** → generate a key.
+3. Set `BREVO_API_KEY`, `EMAIL_FROM_ADDRESS` (the verified sender) and optionally `EMAIL_FROM_NAME`.
+
+Without `BREVO_API_KEY` the links are printed to the console in development; in production sending fails loudly.
+
+### OAuth apps
+
+- **Google**: [Google Cloud Console](https://console.cloud.google.com/apis/credentials) → Create credentials → OAuth client ID → *Web application*.
+  Authorized redirect URI: `${BETTER_AUTH_URL}/api/auth/callback/google` (e.g. `http://localhost:5000/api/auth/callback/google`; add the production URL too).
+  Configure the OAuth consent screen first; in *Testing* mode only listed test users can sign in.
+- **GitHub**: [Developer settings → OAuth Apps](https://github.com/settings/developers) → New OAuth App.
+  Homepage URL: the frontend URL. Authorization callback URL: `${BETTER_AUTH_URL}/api/auth/callback/github`.
+  A GitHub OAuth App has a single callback URL, so create one app for local development and one for production.
+- Set `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` and/or `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET`, and on the frontend `VITE_AUTH_PROVIDERS=google,github`.
+
 ### Scripts
 
 - `npm run migrate:users -- --dry-run`, then `npm run migrate:users`: copies accounts from the legacy `users` collection into Better Auth (same ids, same passwords). Emails are marked as **not verified**: on the first sign-in attempt the user gets a verification email, then the old password works. Review migrated admins manually. Idempotent; the legacy collection is kept as a backup.
@@ -63,7 +81,7 @@ The OAuth callback creates the session as a cookie on the backend domain (in pro
 
 ### Deployment (Render)
 
-1. Set the new env vars (`BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `CORS_ORIGINS`, `RESEND_API_KEY`, `EMAIL_FROM`, OAuth keys, `MONGO_TRANSACTIONS=true` on Atlas) and remove `JWT_SECRET` / `ADMIN_EMAIL`.
+1. Set the new env vars (`BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `CORS_ORIGINS`, `BREVO_API_KEY`, `EMAIL_FROM_ADDRESS`, `EMAIL_FROM_NAME`, OAuth keys, `MONGO_TRANSACTIONS=true` on Atlas) and remove `JWT_SECRET` / `ADMIN_EMAIL`.
 2. Deploy, then run `npm run migrate:users` once against the production database.
 
 ## Deploy
