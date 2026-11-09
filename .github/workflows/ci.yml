@@ -5,6 +5,10 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   build:
@@ -25,3 +29,58 @@ jobs:
 
       - name: Build
         run: npm run build
+
+  # `ref` deploys that commit (https://render.com/docs/deploys). Render then turns auto-deploy off.
+  deploy:
+    name: Deploy
+    needs: build
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Trigger Render deploy
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+          GIT_SHA: ${{ github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ -z "${RENDER_DEPLOY_HOOK_URL:-}" ]; then
+            echo "::error::Missing GitHub Actions secret RENDER_DEPLOY_HOOK_URL. Copy the Deploy Hook from Render Dashboard → service Settings, then add it under GitHub → Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+
+          hook_url=$(printf '%s' "$RENDER_DEPLOY_HOOK_URL" | tr -d '[:space:]')
+          if [ -z "$hook_url" ]; then
+            echo "::error::RENDER_DEPLOY_HOOK_URL is empty after trimming whitespace."
+            exit 1
+          fi
+
+          case "$hook_url" in
+            *\?*) separator='&' ;;
+            *) separator='?' ;;
+          esac
+
+          set +e
+          http_code=$(curl --silent --output /dev/null --write-out '%{http_code}' \
+            --request POST \
+            --max-time 60 \
+            "${hook_url}${separator}ref=${GIT_SHA}")
+          curl_status=$?
+          set -e
+
+          if [ "$curl_status" -ne 0 ] || [ "$http_code" = "000" ]; then
+            echo "::error::Could not reach the Render deploy hook (curl exit ${curl_status})."
+            exit 1
+          fi
+
+          case "$http_code" in
+            200|202)
+              echo "Render accepted the deploy request (HTTP ${http_code}) for ${GIT_SHA}."
+              ;;
+            *)
+              echo "::error::Render deploy hook returned HTTP ${http_code}."
+              exit 1
+              ;;
+          esac
