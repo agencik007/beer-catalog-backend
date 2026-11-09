@@ -1,10 +1,9 @@
 import { NextFunction, Request, Response } from 'express';
-import { ValidationError } from '../middleware/errorMiddleware';
-import asyncHandler from 'express-async-handler';
 import { isValidObjectId } from 'mongoose';
-import { Beer } from '../models/beerModel';
-import { BeerEntity } from '../types';
-import { decodeToken } from '../middleware/authMiddleware';
+import { ValidationError } from '../middleware/errorMiddleware.js';
+import asyncHandler from 'express-async-handler';
+import { Beer } from '../models/beerModel.js';
+import { isAdmin } from '../middleware/authMiddleware.js';
 
 // @desc   Get beers
 // @route  GET /api/beers
@@ -68,12 +67,7 @@ export const userBeers = asyncHandler(
 		const { page = 1, limit = 100 } = req.query;
 
 		try {
-			const authHeader = req.header('authorization');
-			if (!authHeader) {
-				throw new ValidationError('Not authorized, no token.');
-			}
-			const decodedToken = decodeToken(authHeader.split(' ')[1]);
-			const userIdFromToken = decodedToken.id;
+			const userIdFromToken = req.user!.id;
 
 			const [results, itemCount] = await Promise.all([
 				Beer.find({ user: userIdFromToken })
@@ -124,7 +118,7 @@ export const createBeer = asyncHandler(async (req: Request, res: Response) => {
 		alcohol: req.body.alcohol,
 		description: req.body.description,
 		avatar: req.body.avatar,
-	} as BeerEntity);
+	});
 
 	await beer.save();
 
@@ -144,10 +138,10 @@ export const updateBeer = asyncHandler(async (req: Request, res: Response) => {
 
 	const decodeUserId = req.user!.id;
 
-	if (beer.user!.toString() !== decodeUserId.toString()) {
+	if (beer.user!.toString() !== decodeUserId.toString() && !isAdmin(req)) {
 		res.status(401);
 		throw new ValidationError(
-			'Only the beer creator can edit the beer entry.'
+			'Only the beer creator or an admin can edit the beer entry.'
 		);
 	} else {
 		const updatedBeer = await Beer.findByIdAndUpdate(
@@ -175,10 +169,10 @@ export const deleteBeer = asyncHandler(async (req: Request, res: Response) => {
 
 	const decodeUserId = req.user!.id;
 
-	if (beer.user!.toString() !== decodeUserId.toString()) {
+	if (beer.user!.toString() !== decodeUserId.toString() && !isAdmin(req)) {
 		res.status(401);
 		throw new ValidationError(
-			'Only the beer creator can delete the beer entry.'
+			'Only the beer creator or an admin can delete the beer entry.'
 		);
 	} else {
 		await beer.deleteOne();

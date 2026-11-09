@@ -6,8 +6,8 @@ import {
 	getBeers,
 	updateBeer,
 	userBeers,
-} from '../controllers/beerController';
-import { protect } from '../middleware/authMiddleware';
+} from '../controllers/beerController.js';
+import { protect } from '../middleware/authMiddleware.js';
 
 export const beerRouter = Router()
 	.get('/', getBeers)

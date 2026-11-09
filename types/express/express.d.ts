@@ -1,9 +1,12 @@
-import express from 'express';
+import type { Session } from '../../lib/auth.js';
 
 declare global {
 	namespace Express {
 		interface Request {
-			user?: Record<string, any>;
+			user?: Session['user'];
+			session?: Session['session'];
 		}
 	}
 }
+
+export {};
