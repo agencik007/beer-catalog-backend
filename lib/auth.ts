@@ -1,5 +1,6 @@
 import { betterAuth } from 'better-auth';
 import { mongodbAdapter } from 'better-auth/adapters/mongodb';
+import { createAuthMiddleware } from 'better-auth/api';
 import { admin, bearer } from 'better-auth/plugins';
 import { MongoClient } from 'mongodb';
 import bcrypt from 'bcryptjs';
@@ -91,6 +92,12 @@ export const auth = betterAuth({
 
 	socialProviders,
 
+	// State is stored in Mongo. The extra cookie is set on a cross-site XHR
+	// (Vercel → Render) and is dropped before Google redirects back.
+	account: {
+		skipStateCookieCheck: true,
+	},
+
 	rateLimit: {
 		enabled: true,
 		window: 60,
@@ -104,10 +111,31 @@ export const auth = betterAuth({
 	},
 
 	advanced: {
-		// Frontend and backend live on different domains; the OAuth callback relies on a cross-site cookie
+		// Frontend and backend live on different domains
 		...(isProduction
 			? { defaultCookieAttributes: { sameSite: 'none' as const, secure: true } }
 			: {}),
+	},
+
+	// Session cookie is on the API host, so the browser will not send it back
+	// to the frontend. Put the session token in the redirect fragment instead.
+	hooks: {
+		after: createAuthMiddleware(async (ctx) => {
+			const token = ctx.context.newSession?.session.token;
+			const location = ctx.context.responseHeaders?.get('location');
+			if (!token || !location) return;
+
+			let url: URL;
+			try {
+				url = new URL(location);
+			} catch {
+				return;
+			}
+			if (!getAllowedOrigins().includes(url.origin)) return;
+
+			url.hash = new URLSearchParams({ token }).toString();
+			ctx.setHeader('location', url.toString());
+		}),
 	},
 
 	plugins: [bearer(), admin({ defaultRole: 'user', adminRoles: ['admin'] })],
