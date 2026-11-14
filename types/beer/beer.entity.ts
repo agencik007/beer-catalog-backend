@@ -7,7 +7,9 @@ export interface BeerEntity {
 	createdBy: string;
 	name: string;
 	type: string;
-	rating: number;
+	/** Community average of review ratings (0 when there are no reviews) */
+	ratingAvg: number;
+	ratingCount: number;
 	alcohol: number;
 	description: string;
 	avatar?: string;

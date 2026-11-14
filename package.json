@@ -9,7 +9,9 @@
 		"build": "tsc",
 		"typecheck": "tsc --noEmit",
 		"migrate:users": "tsx scripts/migrate-users.ts",
-		"set-admin": "tsx scripts/set-admin.ts"
+		"set-admin": "tsx scripts/set-admin.ts",
+		"migrate:ratings": "tsx scripts/migrate-ratings.ts",
+		"test": "vitest run"
 	},
 	"repository": {
 		"type": "git",
@@ -48,7 +50,11 @@
 		"typescript": "^5.6.3"
 	},
 	"devDependencies": {
-		"tsx": "^4.15.7"
+		"@types/supertest": "^7.2.1",
+		"mongodb-memory-server": "^11.3.0",
+		"supertest": "^7.3.2",
+		"tsx": "^4.15.7",
+		"vitest": "^5.1.0"
 	},
 	"type": "module"
 }
