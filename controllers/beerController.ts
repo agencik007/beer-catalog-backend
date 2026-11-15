@@ -4,6 +4,11 @@ import { ValidationError } from '../middleware/errorMiddleware.js';
 import asyncHandler from 'express-async-handler';
 import { Beer } from '../models/beerModel.js';
 import { isAdmin } from '../middleware/authMiddleware.js';
+import { Review } from '../models/reviewModel.js';
+import { parseRating, upsertReview } from '../lib/reviews.js';
+
+// Fields a beer owner/admin may change; ratings come only from reviews
+const EDITABLE_FIELDS = ['name', 'type', 'alcohol', 'description', 'avatar'] as const;
 
 // @desc   Get beers
 // @route  GET /api/beers
@@ -101,7 +106,6 @@ export const createBeer = asyncHandler(async (req: Request, res: Response) => {
 	if (
 		!req.body.name ||
 		!req.body.type ||
-		!req.body.rating ||
 		!req.body.alcohol ||
 		!req.body.description
 	) {
@@ -109,20 +113,31 @@ export const createBeer = asyncHandler(async (req: Request, res: Response) => {
 		throw new ValidationError('Please fill all fields in form.');
 	}
 
+	// The creator's rating becomes their first review of the beer
+	const rating = parseRating(req.body.rating);
+	if (rating === null) {
+		res.status(400);
+		throw new ValidationError('Rating must be a whole number from 1 to 5.');
+	}
+
 	const beer = await Beer.create({
 		user: req.user!.id,
 		createdBy: req.user!.name,
 		name: req.body.name,
 		type: req.body.type,
-		rating: req.body.rating,
 		alcohol: req.body.alcohol,
 		description: req.body.description,
 		avatar: req.body.avatar,
 	});
 
-	await beer.save();
+	await upsertReview({
+		beerId: beer._id,
+		userId: req.user!.id,
+		userName: req.user!.name,
+		rating,
+	});
 
-	res.status(200).json(beer);
+	res.status(200).json(await Beer.findById(beer._id).lean());
 });
 
 // @desc   Update beer
@@ -144,13 +159,30 @@ export const updateBeer = asyncHandler(async (req: Request, res: Response) => {
 			'Only the beer creator or an admin can edit the beer entry.'
 		);
 	} else {
-		const updatedBeer = await Beer.findByIdAndUpdate(
-			req.params.id,
-			req.body,
-			{
-				new: true,
+		const update: Record<string, unknown> = {};
+		for (const field of EDITABLE_FIELDS) {
+			if (req.body[field] !== undefined) update[field] = req.body[field];
+		}
+
+		// A rating sent with an edit updates the editor's own review
+		if (req.body.rating !== undefined) {
+			const rating = parseRating(req.body.rating);
+			if (rating === null) {
+				res.status(400);
+				throw new ValidationError('Rating must be a whole number from 1 to 5.');
 			}
-		);
+			await upsertReview({
+				beerId: beer._id,
+				userId: decodeUserId,
+				userName: req.user!.name,
+				rating,
+			});
+		}
+
+		const updatedBeer = await Beer.findByIdAndUpdate(req.params.id, update, {
+			new: true,
+			runValidators: true,
+		});
 
 		res.status(200).json(updatedBeer);
 	}
@@ -175,6 +207,7 @@ export const deleteBeer = asyncHandler(async (req: Request, res: Response) => {
 			'Only the beer creator or an admin can delete the beer entry.'
 		);
 	} else {
+		await Review.deleteMany({ beer: beer._id });
 		await beer.deleteOne();
 		res.status(200).json({ id: req.params.id });
 	}

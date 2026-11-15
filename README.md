@@ -77,12 +77,31 @@ Without `BREVO_API_KEY` the links are printed to the console in development; in 
 ### Scripts
 
 - `npm run migrate:users -- --dry-run`, then `npm run migrate:users`: copies accounts from the legacy `users` collection into Better Auth (same ids, same passwords). Emails are marked as **not verified**: on the first sign-in attempt the user gets a verification email, then the old password works. Review migrated admins manually. Idempotent; the legacy collection is kept as a backup.
+- `npm run migrate:ratings -- --dry-run`, then `npm run migrate:ratings`: turns each beer's legacy `rating` into a review by the user who added it (rounded to 1–5; an existing review by that user wins), fills `ratingAvg` / `ratingCount` and removes the old field. Idempotent. Run once after deploying the reviews release.
 - `npm run set-admin -- <email> [--revoke]`: grants or revokes the admin role.
 
 ### Deployment (Render)
 
 1. Set the new env vars (`BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `CORS_ORIGINS`, `BREVO_API_KEY`, `EMAIL_FROM_ADDRESS`, `EMAIL_FROM_NAME`, OAuth keys, `MONGO_TRANSACTIONS=true` on Atlas) and remove `JWT_SECRET` / `ADMIN_EMAIL`.
 2. Deploy, then run `npm run migrate:users` once against the production database.
+
+## Community reviews
+
+Every signed-in (not banned) user can leave **one review per beer**: a whole-number rating from 1 to 5 and an optional comment (up to 1000 characters). Users edit or delete their own review; admins can delete any review. The beer caches the community average in `ratingAvg` (one decimal, `0` when unrated) and `ratingCount`, refreshed on every review change. The rating sent when creating a beer becomes its creator's first review.
+
+| Method | Path | Access | Notes |
+|---|---|---|---|
+| GET | `/api/beers/:id/reviews?page=1&limit=10` | public | Newest first, `limit` max 50. Same pagination shape as `GET /api/beers`. |
+| GET | `/api/beers/:id/reviews/me` | Bearer | The caller's review or `null`. |
+| PUT | `/api/beers/:id/reviews/me` | Bearer | Body `{ rating, comment? }`. Creates or replaces the caller's review. Returns `{ review, ratingAvg, ratingCount }`. |
+| DELETE | `/api/beers/:id/reviews/me` | Bearer | Deletes the caller's review. Returns `{ id, ratingAvg, ratingCount }`. |
+| DELETE | `/api/beers/:id/reviews/:reviewId` | Bearer | Review author or admin. |
+
+Review writes are limited to 20 requests per 10 minutes per IP. Deleting a beer deletes its reviews. `PUT /api/beers/:id` only accepts `name`, `type`, `alcohol`, `description`, `avatar` (and `rating`, which updates the editor's own review).
+
+## Tests
+
+`npm test` runs the API tests (Vitest + Supertest) against an in-memory MongoDB (`mongodb-memory-server` downloads a `mongod` binary on the first run). Better Auth is mocked, so no env vars are needed. CI runs typecheck and tests before the build.
 
 ## Deploy
 
